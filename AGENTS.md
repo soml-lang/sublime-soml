@@ -6,7 +6,7 @@ This is a Sublime Text package for [SOML](https://soml.sh). It targets only the 
 
 - `SOML.sublime-syntax` is the syntax. Its scopes follow the built-in JSON and TOML syntaxes, so the built-in color schemes color keys. The readme lists the scopes for theme authors.
 - `plugin.py` has the commands. `soml/` is [soml-python](https://github.com/soml-lang/soml-python), copied as it is, and the plugin imports it with `from . import soml`. Do not edit `soml/`. Change soml-python and copy it again with `cp ../soml-python/src/soml/*.py soml/`.
-- `json5.py` reads JSON, JSONC, and JSON5 for *Convert to SOML* and *Paste JSON as SOML*. It passes the [JSON5 test suite](https://github.com/json5/json5-tests), except that a duplicate key is an error, as in SOML.
+- `json5/` reads JSON, JSONC, and JSON5 for *Convert to SOML* and *Paste JSON as SOML*. It passes the [JSON5 test suite](https://github.com/json5/json5-tests), except that a duplicate key is an error, as in SOML.
 - `tests/` has the syntax tests, including symbol and reindent tests. `test.js` checks the scope of every token in every valid document of the conformance suite in `../soml` against the reference parser.
 
 ## Testing

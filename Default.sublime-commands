@@ -53,5 +53,14 @@
 			"base_file": "${packages}/SOML/SOML.sublime-settings",
 			"default": "{\n\t$0\n}\n"
 		}
+	},
+	{
+		"caption": "Preferences: SOML Key Bindings",
+		"command": "edit_settings",
+		"args": {
+			"base_file": "${packages}/SOML/Default.sublime-keymap",
+			"user_file": "${packages}/User/Default ($platform).sublime-keymap",
+			"default": "[\n\t$0\n]\n"
+		}
 	}
 ]
