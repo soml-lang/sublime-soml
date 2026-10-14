@@ -1,0 +1,732 @@
+# SYNTAX TEST "Packages/SOML/SOML.sublime-syntax"
+
+###[ KEYS ]####################################################################
+
+content-type: 1
+# <- meta.mapping.key.soml meta.string.soml string.unquoted.soml - meta.mapping.soml
+#^^^^^^^^^^^ meta.mapping.key.soml meta.string.soml string.unquoted.soml - meta.mapping.soml
+#           ^ meta.mapping.soml punctuation.separator.key-value.soml - meta.mapping.key
+#             ^ meta.mapping.value.soml meta.number.integer.decimal.soml constant.numeric.value.soml - meta.mapping.soml
+
+404: 1
+# <- meta.mapping.key.soml string.unquoted.soml - constant
+#^^ meta.mapping.key.soml string.unquoted.soml - constant
+
+2024-01-01: 1
+# <- meta.mapping.key.soml string.unquoted.soml - constant
+#^^^^^^^^^ meta.mapping.key.soml string.unquoted.soml - constant
+
+true: null
+# <- meta.mapping.key.soml string.unquoted.soml - constant
+#^^^ meta.mapping.key.soml string.unquoted.soml - constant
+#     ^^^^ constant.language.null.soml
+
+-foo: 1
+# <- meta.mapping.key.soml string.unquoted.soml - keyword
+#^^^ meta.mapping.key.soml string.unquoted.soml - keyword
+
+a:1
+# <- meta.mapping.key.soml
+#^ punctuation.separator.key-value.soml
+# ^ constant.numeric.value.soml
+
+'b c': 1
+# <- meta.mapping.key.soml meta.string.soml string.quoted.single.soml punctuation.definition.string.begin.soml
+#^^^^ meta.mapping.key.soml meta.string.soml string.quoted.single.soml
+#   ^ punctuation.definition.string.end.soml
+#    ^ punctuation.separator.key-value.soml - meta.mapping.key
+
+"d\n": 1
+# <- meta.mapping.key.soml meta.string.soml string.quoted.double.soml
+# ^^ constant.character.escape.soml
+#    ^ punctuation.separator.key-value.soml - meta.mapping.key
+
+'a.b': 1
+# <- meta.mapping.key.soml string.quoted.single.soml punctuation.definition.string.begin.soml
+#^^^ meta.mapping.key.soml string.quoted.single.soml - punctuation
+
+# A key is never a path, so a `.` after it is an error, and the key goes on after it.
+a.b: 1
+# <- meta.mapping.key.soml string.unquoted.soml
+#^ meta.mapping.key.soml invalid.illegal.unexpected-token.soml
+# ^ meta.mapping.key.soml string.unquoted.soml
+#  ^ punctuation.separator.key-value.soml - meta.mapping.key
+#    ^ meta.mapping.value.soml constant.numeric.value.soml
+
+example.com: 1
+#      ^ invalid.illegal.unexpected-token.soml
+#       ^^^ meta.mapping.key.soml string.unquoted.soml - invalid
+#          ^ punctuation.separator.key-value.soml
+
+'a'.b: 1
+#  ^ meta.mapping.key.soml invalid.illegal.unexpected-token.soml
+#    ^ punctuation.separator.key-value.soml
+
+a.'b': 1
+#^ invalid.illegal.unexpected-token.soml
+# ^^^ meta.mapping.key.soml string.quoted.single.soml
+#    ^ punctuation.separator.key-value.soml
+
+x: {a.b: 1}
+#    ^ meta.mapping.key.soml invalid.illegal.unexpected-token.soml
+#      ^ punctuation.separator.key-value.soml
+#         ^ punctuation.section.mapping.end.soml
+
+y: [{a.b: 1}]
+#     ^ meta.mapping.key.soml invalid.illegal.unexpected-token.soml
+#       ^ punctuation.separator.key-value.soml
+#          ^ punctuation.section.mapping.end.soml
+#           ^ punctuation.section.sequence.end.soml
+
+# A number is a valid bare key, so `3.14` as a key is a key with a dot, not a float.
+3.14: 'x'
+# <- meta.mapping.key.soml string.unquoted.soml - constant
+#^ invalid.illegal.unexpected-token.soml
+# ^^ meta.mapping.key.soml string.unquoted.soml - constant
+#   ^ punctuation.separator.key-value.soml
+
+# Nothing may come between a key and its colon.
+a : 1
+#^ invalid.illegal.unexpected-token.soml
+# ^ punctuation.separator.key-value.soml
+
+a /* c */: 1
+# ^^^^^^^ comment.block.soml
+#        ^ invalid.illegal.unexpected-token.soml
+
+a.: 1
+#^ invalid.illegal.unexpected-token.soml
+# ^ punctuation.separator.key-value.soml
+
+a b: 1
+# ^^ invalid.illegal.unexpected-token.soml
+
+é: 1
+# <- invalid.illegal.unexpected-token.soml
+#^ invalid.illegal.unexpected-token.soml
+
+###[ STRINGS ]#################################################################
+
+regex: '^\d{4}$'
+#      ^^^^^^^^^ meta.mapping.value.soml meta.string.soml string.quoted.single.soml
+#      ^ punctuation.definition.string.begin.soml
+#        ^^ string.quoted.single.soml - constant.character.escape
+#              ^ punctuation.definition.string.end.soml
+
+escaped: "a\n\t\"\\\u{0}\u{e9}\u{1f600}\u{10ffff}"
+#        ^ meta.string.soml string.quoted.double.soml punctuation.definition.string.begin.soml
+#          ^^ constant.character.escape.soml
+#            ^^ constant.character.escape.soml
+#              ^^ constant.character.escape.soml
+#                ^^ constant.character.escape.soml
+#                  ^^^^^ constant.character.escape.soml
+#                       ^^^^^^ constant.character.escape.soml
+#                             ^^^^^^^^^ constant.character.escape.soml
+#                                      ^^^^^^^^^^ constant.character.escape.soml
+#                                                ^ punctuation.definition.string.end.soml
+
+bad-escape: "a\q"
+#             ^^ invalid.illegal.unrecognized-string-escape.soml
+#               ^ punctuation.definition.string.end.soml
+bad-escape: "a\'"
+#             ^^ invalid.illegal.unrecognized-string-escape.soml
+#               ^ punctuation.definition.string.end.soml
+bad-escape: "a\r"
+#             ^^ invalid.illegal.unrecognized-string-escape.soml
+#               ^ punctuation.definition.string.end.soml
+bad-escape: "a\/"
+#             ^^ invalid.illegal.unrecognized-string-escape.soml
+#               ^ punctuation.definition.string.end.soml
+bad-escape: "a\0"
+#             ^^ invalid.illegal.unrecognized-string-escape.soml
+#               ^ punctuation.definition.string.end.soml
+bad-escape: "a\x"
+#             ^^ invalid.illegal.unrecognized-string-escape.soml
+#               ^ punctuation.definition.string.end.soml
+bad-escape: "a\u"
+#             ^^ invalid.illegal.unrecognized-string-escape.soml
+#               ^ punctuation.definition.string.end.soml
+bad-escape: "a\u{E9}"
+#             ^^^^^^ invalid.illegal.unrecognized-string-escape.soml
+#                   ^ punctuation.definition.string.end.soml
+bad-escape: "a\u{0041}"
+#             ^^^^^^^^ invalid.illegal.unrecognized-string-escape.soml
+#                     ^ punctuation.definition.string.end.soml
+bad-escape: "a\u{d}"
+#             ^^^^^ invalid.illegal.unrecognized-string-escape.soml
+#                  ^ punctuation.definition.string.end.soml
+bad-escape: "a\u{d800}"
+#             ^^^^^^^^ invalid.illegal.unrecognized-string-escape.soml
+#                     ^ punctuation.definition.string.end.soml
+bad-escape: "a\u{dfff}"
+#             ^^^^^^^^ invalid.illegal.unrecognized-string-escape.soml
+#                     ^ punctuation.definition.string.end.soml
+bad-escape: "a\u{110000}"
+#             ^^^^^^^^^^ invalid.illegal.unrecognized-string-escape.soml
+#                       ^ punctuation.definition.string.end.soml
+bad-escape: "a\u{1000000}"
+#             ^^^^^^^^^^^ invalid.illegal.unrecognized-string-escape.soml
+#                        ^ punctuation.definition.string.end.soml
+
+# An escape after a bad `\u{` is still an escape, so the string does not end early.
+"\u{\"}": 1
+#^^^ invalid.illegal.unrecognized-string-escape.soml
+#   ^^ constant.character.escape.soml
+#      ^ punctuation.definition.string.end.soml
+#       ^ punctuation.separator.key-value.soml
+
+# A string that is not closed ends at the end of its line.
+unclosed: 'x
+#         ^^ string.quoted.single.soml
+after-unclosed: 1
+# <- meta.mapping.key.soml - meta.mapping.value
+#^^^^^^^^^^^^^ meta.mapping.key.soml - meta.mapping.value
+#             ^ punctuation.separator.key-value.soml
+
+control: 'ab'
+#          ^ invalid.illegal.control-character.soml
+
+invisible: 'a​b'
+#            ^ string.quoted.single.soml - invalid
+
+###[ BLOCK STRINGS ]###########################################################
+
+description:
+	'''
+#^^^ meta.mapping.value.soml meta.string.soml string.quoted.single.block.soml punctuation.definition.string.begin.soml
+	# not a comment
+#^^^^^^^^^^^^^^^ meta.mapping.value.soml meta.string.soml string.quoted.single.block.soml - comment
+	''''
+#^^^^ string.quoted.single.block.soml - punctuation
+	"""
+#^^^ string.quoted.single.block.soml - punctuation
+	x '''
+#  ^^^ string.quoted.single.block.soml - punctuation
+	'''
+#^^^ meta.mapping.value.soml meta.string.soml string.quoted.single.block.soml punctuation.definition.string.end.soml
+after-block: 1
+# <- meta.mapping.key.soml - meta.mapping.value
+#^^^^^^^^^^ meta.mapping.key.soml - meta.mapping.value
+
+escaped-block: """
+	\t \q \
+#^^ string.quoted.double.block.soml constant.character.escape.soml
+#   ^^ invalid.illegal.unrecognized-string-escape.soml
+#      ^ invalid.illegal.unrecognized-string-escape.soml
+	"""
+#^^^ meta.string.soml string.quoted.double.block.soml punctuation.definition.string.end.soml
+
+text-after-opening: ''' # x
+#                   ^^^ punctuation.definition.string.begin.soml
+#                      ^^^^ invalid.illegal.text-after-delimiter.soml
+	'''
+
+trailing-space-after-opening: ''' 
+#                                ^ invalid.illegal.text-after-delimiter.soml
+	'''
+
+longer-delimiter: ''''
+	'''
+#^^^ string.quoted.single.block.soml - punctuation
+	'''''
+#^^^^^ string.quoted.single.block.soml - punctuation
+	''''
+#^^^^ string.quoted.single.block.soml punctuation.definition.string.end.soml
+
+in-array: [
+	'''
+	x
+	''', '''
+#^^^ punctuation.definition.string.end.soml
+#   ^ meta.sequence.soml punctuation.separator.sequence.soml - string
+#     ^^^ punctuation.definition.string.begin.soml
+	y
+	''' # comment
+#    ^^^^^^^^^ comment.line.number-sign.soml
+]
+# <- meta.sequence.soml punctuation.section.sequence.end.soml
+
+###[ NUMBERS ]#################################################################
+
+int: -30
+#    ^^^ meta.mapping.value.soml meta.number.integer.decimal.soml
+#    ^ keyword.operator.arithmetic.soml
+#     ^^ constant.numeric.value.soml
+zero: 0
+#     ^ meta.number.integer.decimal.soml constant.numeric.value.soml
+budget: 1_000_000
+#       ^^^^^^^^^ meta.number.integer.decimal.soml constant.numeric.value.soml
+hex: 0x00FF_88
+#    ^^^^^^^^^ meta.number.integer.hexadecimal.soml
+#    ^^ constant.numeric.base.soml
+#      ^^^^^^^ constant.numeric.value.soml
+octal: 0o644
+#      ^^ meta.number.integer.octal.soml constant.numeric.base.soml
+#        ^^^ meta.number.integer.octal.soml constant.numeric.value.soml
+binary: 0b1010_1100
+#       ^^ meta.number.integer.binary.soml constant.numeric.base.soml
+#         ^^^^^^^^^ meta.number.integer.binary.soml constant.numeric.value.soml
+float: -1.5e-10
+#      ^^^^^^^^ meta.number.float.decimal.soml
+#      ^ keyword.operator.arithmetic.soml
+#       ^^^^^^^ constant.numeric.value.soml
+#        ^ punctuation.separator.decimal.soml
+exponent: 1e5
+#         ^^^ meta.number.float.decimal.soml constant.numeric.value.soml
+negative-zero: -0.0
+#              ^^^^ meta.number.float.decimal.soml
+limit: infinity
+#      ^^^^^^^^ meta.number.float.other.soml constant.numeric.value.soml
+floor: -infinity
+#      ^ meta.number.float.other.soml keyword.operator.arithmetic.soml
+#       ^^^^^^^^ meta.number.float.other.soml constant.numeric.value.soml
+
+bad-number: 0xff
+#           ^^^^ invalid.illegal.unexpected-token.soml
+bad-number: 0XFF
+#           ^^^^ invalid.illegal.unexpected-token.soml
+bad-number: -0xFF
+#           ^^^^^ invalid.illegal.unexpected-token.soml
+bad-number: 00
+#           ^^ invalid.illegal.unexpected-token.soml
+bad-number: -0
+#           ^^ invalid.illegal.unexpected-token.soml
+bad-number: 01
+#           ^^ invalid.illegal.unexpected-token.soml
+bad-number: 1_
+#           ^^ invalid.illegal.unexpected-token.soml
+bad-number: _1
+#           ^^ invalid.illegal.unexpected-token.soml
+bad-number: 1__0
+#           ^^^^ invalid.illegal.unexpected-token.soml
+bad-number: .5
+#           ^^ invalid.illegal.unexpected-token.soml
+bad-number: 5.
+#           ^^ invalid.illegal.unexpected-token.soml
+bad-number: 1E10
+#           ^^^^ invalid.illegal.unexpected-token.soml
+bad-number: +1
+#           ^^ invalid.illegal.unexpected-token.soml
+bad-number: 1e+5
+#           ^^^^ invalid.illegal.unexpected-token.soml
+bad-number: 1e05
+#           ^^^^ invalid.illegal.unexpected-token.soml
+bad-number: 1e-0
+#           ^^^^ invalid.illegal.unexpected-token.soml
+bad-number: inf
+#           ^^^ invalid.illegal.unexpected-token.soml
+bad-number: Infinity
+#           ^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad-number: nan
+#           ^^^ invalid.illegal.unexpected-token.soml
+bad-number: 0x
+#           ^^ invalid.illegal.unexpected-token.soml
+bad-number: 0b2
+#           ^^^ invalid.illegal.unexpected-token.soml
+bad-number: 0o8
+#           ^^^ invalid.illegal.unexpected-token.soml
+bad-number: 0x_FF
+#           ^^^^^ invalid.illegal.unexpected-token.soml
+bad-number: 1.5.5
+#           ^^^^^ invalid.illegal.unexpected-token.soml
+
+###[ DURATIONS ]###############################################################
+
+retry-after: 1m30s
+#            ^^^^^ meta.mapping.value.soml meta.number.duration.soml
+#            ^ constant.numeric.value.soml
+#             ^ constant.numeric.suffix.soml
+#              ^^ constant.numeric.value.soml
+#                ^ constant.numeric.suffix.soml
+grace: 1h1.5m
+#      ^^^^^^ meta.number.duration.soml
+#        ^^^ constant.numeric.value.soml
+#         ^ punctuation.separator.decimal.soml
+#       ^ constant.numeric.suffix.soml
+skew: -0.5s
+#     ^ meta.number.duration.soml keyword.operator.arithmetic.soml
+#      ^^^ constant.numeric.value.soml
+duration: 250ms
+#         ^^^^^ meta.number.duration.soml - invalid
+#             ^ constant.numeric.suffix.soml
+duration: 1us
+#         ^^^ meta.number.duration.soml - invalid
+#           ^ constant.numeric.suffix.soml
+duration: 1ns
+#         ^^^ meta.number.duration.soml - invalid
+#           ^ constant.numeric.suffix.soml
+duration: 90m
+#         ^^^ meta.number.duration.soml - invalid
+#           ^ constant.numeric.suffix.soml
+duration: 0s
+#         ^^ meta.number.duration.soml - invalid
+#          ^ constant.numeric.suffix.soml
+duration: 1_000ms
+#         ^^^^^^^ meta.number.duration.soml - invalid
+#               ^ constant.numeric.suffix.soml
+duration: 0.0000000001h
+#         ^^^^^^^^^^^^^ meta.number.duration.soml - invalid
+#                     ^ constant.numeric.suffix.soml
+duration: 1h30m45s500ms1us1ns
+#         ^^^^^^^^^^^^^^^^^^^ meta.number.duration.soml - invalid
+#                           ^ constant.numeric.suffix.soml
+
+bad-duration: 30m1h
+#             ^^^^^ invalid.illegal.unexpected-token.soml
+bad-duration: 1m1m
+#             ^^^^ invalid.illegal.unexpected-token.soml
+bad-duration: 1.5h30m
+#             ^^^^^^^ invalid.illegal.unexpected-token.soml
+bad-duration: -0s
+#             ^^^ invalid.illegal.unexpected-token.soml
+bad-duration: -0.0h0m
+#             ^^^^^^^ invalid.illegal.unexpected-token.soml
+bad-duration: 1d
+#             ^^ invalid.illegal.unexpected-token.soml
+bad-duration: 1H
+#             ^^ invalid.illegal.unexpected-token.soml
+bad-duration: 1h_30m
+#             ^^^^^^ invalid.illegal.unexpected-token.soml
+bad-duration: .5s
+#             ^^^ invalid.illegal.unexpected-token.soml
+bad-duration: 1.s
+#             ^^^ invalid.illegal.unexpected-token.soml
+bad-duration: 1hm
+#             ^^^ invalid.illegal.unexpected-token.soml
+bad-duration: 01s
+#             ^^^ invalid.illegal.unexpected-token.soml
+bad-duration: 1µs
+#             ^^^ invalid.illegal.unexpected-token.soml
+bad-duration: 1e3s
+#             ^^^^ invalid.illegal.unexpected-token.soml
+
+###[ INSTANTS ]################################################################
+
+release: 2026-09-19T14:00:00.5+02:00
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.mapping.value.soml constant.other.datetime.soml
+#            ^ punctuation.separator.date.soml
+#               ^ punctuation.separator.date.soml
+#                  ^ punctuation.separator.datetime.soml
+#                     ^ punctuation.separator.time.soml
+#                        ^ punctuation.separator.time.soml
+#                           ^ punctuation.separator.decimal.soml
+#                             ^ keyword.operator.arithmetic.soml
+#                                ^ punctuation.separator.time.soml
+utc: 2026-09-19T14:00:00Z
+#                       ^ constant.other.datetime.soml storage.modifier.timezone.soml
+instant: 2024-02-29T00:00:00Z
+#        ^^^^^^^^^^^^^^^^^^^^ constant.other.datetime.soml - invalid
+instant: 2000-02-29T00:00:00Z
+#        ^^^^^^^^^^^^^^^^^^^^ constant.other.datetime.soml - invalid
+instant: 0001-01-01T00:00:00Z
+#        ^^^^^^^^^^^^^^^^^^^^ constant.other.datetime.soml - invalid
+instant: 9999-12-31T23:59:59.999999999Z
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ constant.other.datetime.soml - invalid
+instant: 2026-09-19T14:00:00-23:59
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^ constant.other.datetime.soml - invalid
+instant: 2026-04-30T00:00:00Z
+#        ^^^^^^^^^^^^^^^^^^^^ constant.other.datetime.soml - invalid
+
+# After a comma, an instant is still a value, not a key.
+after-comma: [1, 2026-09-19T14:00:00Z]
+#                ^^^^^^^^^^^^^^^^^^^^ constant.other.datetime.soml - meta.mapping.key
+
+bad-instant: 2026-09-19t14:00:00Z
+#            ^^^^^^^^^^^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad-instant: 2026-09-19T14:00:00z
+#            ^^^^^^^^^^^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad-instant: 2026-09-19T14:00:00
+#            ^^^^^^^^^^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad-instant: 2026-09-19
+#            ^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad-instant: 0000-01-01T00:00:00Z
+#            ^^^^^^^^^^^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad-instant: 2026-13-01T00:00:00Z
+#            ^^^^^^^^^^^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad-instant: 2026-00-01T00:00:00Z
+#            ^^^^^^^^^^^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad-instant: 2026-09-00T00:00:00Z
+#            ^^^^^^^^^^^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad-instant: 2026-09-31T00:00:00Z
+#            ^^^^^^^^^^^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad-instant: 2026-02-29T00:00:00Z
+#            ^^^^^^^^^^^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad-instant: 2100-02-29T00:00:00Z
+#            ^^^^^^^^^^^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad-instant: 2026-09-19T24:00:00Z
+#            ^^^^^^^^^^^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad-instant: 2026-09-19T14:60:00Z
+#            ^^^^^^^^^^^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad-instant: 2026-09-19T14:00:60Z
+#            ^^^^^^^^^^^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad-instant: 2026-09-19T14:00:00-00:00
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad-instant: 2026-09-19T14:00:00+24:00
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad-instant: 2026-09-19T14:00:00+0200
+#            ^^^^^^^^^^^^^^^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad-instant: 2026-09-19T14:00:00.1234567890Z
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad-instant: 2026-09-19T14:00:00.Z
+#            ^^^^^^^^^^^^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+
+###[ KEYWORDS ]################################################################
+
+flags: [true, false, null]
+#       ^^^^ constant.language.boolean.true.soml
+#             ^^^^^ constant.language.boolean.false.soml
+#                    ^^^^ constant.language.null.soml
+bad-keyword: yes
+#            ^^^ meta.mapping.value.soml invalid.illegal.unexpected-token.soml
+bad-keyword: no
+#            ^^ meta.mapping.value.soml invalid.illegal.unexpected-token.soml
+bad-keyword: True
+#            ^^^^ meta.mapping.value.soml invalid.illegal.unexpected-token.soml
+bad-keyword: NULL
+#            ^^^^ meta.mapping.value.soml invalid.illegal.unexpected-token.soml
+bad-keyword: nil
+#            ^^^ meta.mapping.value.soml invalid.illegal.unexpected-token.soml
+bad-keyword: on
+#            ^^ meta.mapping.value.soml invalid.illegal.unexpected-token.soml
+bad-keyword: undefined
+#            ^^^^^^^^^ meta.mapping.value.soml invalid.illegal.unexpected-token.soml
+
+###[ ARRAYS AND OBJECTS ]######################################################
+
+ports: [
+#      ^ meta.mapping.value.soml meta.sequence.soml punctuation.section.sequence.begin.soml
+	80
+#^^ meta.sequence.soml meta.number.integer.decimal.soml - meta.mapping.value meta.mapping.value
+	443,
+#^^^ meta.number.integer.decimal.soml
+#   ^ punctuation.separator.sequence.soml
+]
+# <- meta.mapping.value.soml meta.sequence.soml punctuation.section.sequence.end.soml
+
+pool: {min: 2, max: 16,}
+#     ^ meta.mapping.value.soml meta.mapping.soml punctuation.section.mapping.begin.soml
+#      ^^^ meta.mapping.value.soml meta.mapping.key.soml string.unquoted.soml - meta.mapping.soml
+#         ^ meta.mapping.value.soml meta.mapping.soml punctuation.separator.key-value.soml
+#           ^ meta.mapping.value.soml meta.mapping.value.soml meta.number.integer.decimal.soml
+#            ^ meta.mapping.soml punctuation.separator.sequence.soml
+#                     ^ punctuation.separator.sequence.soml - invalid
+#                      ^ punctuation.section.mapping.end.soml
+
+matrix: [[1, 2], [3, 4], [], {}]
+#       ^^ meta.sequence.soml
+#        ^ meta.sequence.soml meta.sequence.soml punctuation.section.sequence.begin.soml
+#             ^ meta.sequence.soml meta.sequence.soml punctuation.section.sequence.end.soml
+#              ^ meta.sequence.soml punctuation.separator.sequence.soml - meta.sequence meta.sequence
+#                        ^^ meta.sequence.soml meta.sequence.soml
+#                            ^^ meta.sequence.soml meta.mapping.soml
+
+records: [
+	{name: 'a', email: 'b'}
+#^^^^^^^^^^^^^^^^^^^^^^^ meta.sequence.soml
+#^ meta.sequence.soml meta.mapping.soml punctuation.section.mapping.begin.soml
+# ^^^^ meta.sequence.soml meta.mapping.key.soml
+	{name: 'c'}
+#^ punctuation.section.mapping.begin.soml - invalid
+]
+
+value-on-next-line:
+	# A comment between a key and its value
+	[1]
+#^^^ meta.mapping.value.soml meta.sequence.soml
+
+# An instant on the line after its key is a value, not a key.
+instant-on-next-line:
+	2026-09-19T14:00:00Z
+#^^^^^^^^^^^^^^^^^^^^ meta.mapping.value.soml constant.other.datetime.soml
+
+# A missing value at the end of a line does not take over the next member.
+missing-value:
+next-member: 1
+# <- meta.mapping.key.soml - invalid
+#^^^^^^^^^^ meta.mapping.key.soml - invalid
+#          ^ punctuation.separator.key-value.soml
+#            ^ constant.numeric.value.soml
+
+missing-value-in-object: {a:, b: 1}
+#                           ^ punctuation.separator.sequence.soml
+#                 ^ meta.mapping.key.soml
+
+missing-comma: [1 2]
+#                 ^ invalid.illegal.unexpected-token.soml
+missing-comma-in-object: {a: 1 b: 2}
+#                              ^^ invalid.illegal.unexpected-token.soml
+
+# A comma at the start of a line is an error.
+comma-first: [
+	1
+	, 2
+#^ invalid.illegal.unexpected-token.soml
+#  ^ constant.numeric.value.soml - invalid
+]
+
+empty-items: [,1,,2]
+#             ^ invalid.illegal.unexpected-token.soml
+#                ^ invalid.illegal.unexpected-token.soml
+# A wrong closing bracket closes the array or object, so the next member is not taken over.
+mismatched: [1}
+#             ^ meta.sequence.soml invalid.illegal.unexpected-token.soml
+after-mismatched: {a: 1]
+#                      ^ meta.mapping.soml invalid.illegal.unexpected-token.soml
+after-both: 1
+# <- meta.mapping.key.soml - meta.sequence - meta.mapping.value
+#^^^^^^^^^ meta.mapping.key.soml - meta.sequence - meta.mapping.value
+
+# An array that is not closed ends at a line that begins with a key, so the rest of the document is not marked invalid.
+open-array: [1, 2
+#           ^ meta.sequence.soml punctuation.section.sequence.begin.soml
+after-open-array: 1
+# <- meta.mapping.key.soml - meta.sequence - invalid
+#^^^^^^^^^^^^^^^ meta.mapping.key.soml - meta.sequence - invalid
+#                 ^ meta.mapping.value.soml constant.numeric.value.soml - meta.sequence
+nested-open-array: {a: [[1
+#                      ^^ meta.sequence.soml
+	b: 2
+#^ meta.mapping.value.soml meta.mapping.key.soml - meta.sequence - invalid
+#   ^ constant.numeric.value.soml - meta.sequence
+}
+# <- meta.mapping.soml punctuation.section.mapping.end.soml
+open-array-before-a-comment: [1, 2
+/* note */ after-comment: 1
+# <- comment.block.soml - meta.sequence
+#          ^^^^^^^^^^^^^ meta.mapping.key.soml - meta.sequence - invalid
+#                         ^ constant.numeric.value.soml - meta.sequence - invalid
+open-array-in-braces: {
+	a: [1, 2
+	/* c */ b: 1
+#        ^ meta.mapping.key.soml - meta.sequence - invalid
+}
+# <- punctuation.section.mapping.end.soml - invalid
+comma-after-a-comment-line: [1
+/* c */ , 2]
+#       ^ invalid.illegal.unexpected-token.soml
+item-after-a-comment-line: [1
+/* c */ 2]
+#       ^ meta.sequence.soml constant.numeric.value.soml - invalid
+#        ^ punctuation.section.sequence.end.soml
+instants-in-open-array: [
+	2026-09-19T14:00:00Z
+#^^^^^^^^^^^^^^^^^^^^ meta.sequence.soml constant.other.datetime.soml
+]
+# <- meta.sequence.soml punctuation.section.sequence.end.soml
+invalid-instant-in-array: [
+	2026-02-30T00:00:00Z
+#^^^^^^^^^^^^^^^^^^^^ meta.sequence.soml invalid.illegal.unexpected-token.soml
+	1
+#^ meta.sequence.soml constant.numeric.value.soml
+]
+# <- meta.sequence.soml punctuation.section.sequence.end.soml
+invalid-instant-on-next-line:
+	2026-02-30T00:00:00Z
+#^^^^^^^^^^^^^^^^^^^^ meta.mapping.value.soml invalid.illegal.unexpected-token.soml
+after-invalid-instant: 1
+# <- meta.mapping.key.soml - invalid
+#^^^^^^^^^^^^^^^^^^^^ meta.mapping.key.soml - invalid
+
+# The members of a brace-less object are separated by line breaks only.
+two-members-on-one-line: 1 b: 2
+#                          ^^ invalid.illegal.unexpected-token.soml
+#                             ^ invalid.illegal.unexpected-token.soml
+top-level-comma: 1,
+#                 ^ invalid.illegal.unexpected-token.soml
+
+# Only space, tab, and LF are whitespace.
+no-break-space: 1
+#              ^^ invalid.illegal.unexpected-token.soml
+
+###[ COMMENTS ]################################################################
+
+line: 1 # comment
+#       ^^^^^^^^^ meta.mapping.soml comment.line.number-sign.soml
+#       ^ punctuation.definition.comment.soml
+# A line comment includes its line break, and it still ends the line.
+comment-then-member: 1 # comment
+#                      ^^^^^^^^^ comment.line.number-sign.soml
+next-member: 2
+# <- meta.mapping.key.soml - comment - invalid
+#^^^^^^^^^^ meta.mapping.key.soml - comment - invalid
+#            ^ constant.numeric.value.soml
+comment-then-comma: [
+	1 # comment
+	, 2
+#^ invalid.illegal.unexpected-token.soml
+]
+comment-then-value: # comment
+	2026-09-19T14:00:00Z
+#^^^^^^^^^^^^^^^^^^^^ meta.mapping.value.soml constant.other.datetime.soml
+comment-then-missing-value: # comment
+after-missing-value: 1
+# <- meta.mapping.key.soml - invalid
+#^^^^^^^^^^^^^^^^^^ meta.mapping.key.soml - invalid
+block-comment-after-line-comment: 1 # comment
+#                                   ^^^^^^^^^ comment.line.number-sign.soml
+/* x */ next: 2
+# <- comment.block.soml
+#^^^^^^ comment.block.soml
+#       ^^^^ meta.mapping.key.soml - invalid
+#             ^ constant.numeric.value.soml - invalid
+block-comment-after-line-comment-in-array: [1 # comment
+/* x */ 2]
+#       ^ constant.numeric.value.soml - invalid
+#        ^ punctuation.section.sequence.end.soml
+block-comment-after-line-comment-in-object: {a: 1 # comment
+/* x */ b: 2}
+#       ^ meta.mapping.key.soml - invalid
+#          ^ constant.numeric.value.soml - invalid
+comma-at-column-zero-after-comment: [1 # comment
+, 2]
+# <- invalid.illegal.unexpected-token.soml
+# ^ constant.numeric.value.soml - invalid
+in-braces: {a: 1 # comment
+#                ^^^^^^^^^ comment.line.number-sign.soml
+	b: 2}
+#^ meta.mapping.key.soml - invalid
+#    ^ punctuation.section.mapping.end.soml
+
+no-space: 1#comment
+#          ^^^^^^^^ comment.line.number-sign.soml
+#         ^ constant.numeric.value.soml
+
+in-array: [1 /* a */, /* b */ 2 /* c */]
+#            ^^^^^^^ comment.block.soml
+#            ^^ punctuation.definition.comment.begin.soml
+#                 ^^ punctuation.definition.comment.end.soml
+#                   ^ punctuation.separator.sequence.soml
+#                     ^^^^^^^ comment.block.soml
+#                             ^ constant.numeric.value.soml
+#                               ^^^^^^^ comment.block.soml
+
+# The `*/` of `/*/` closes the comment.
+/* x /*/ after: 1
+# <- comment.block.soml - invalid
+#^^^^^^^ comment.block.soml - invalid
+#     ^^ punctuation.definition.comment.end.soml
+#        ^^^^^ meta.mapping.key.soml
+
+/* a /* b */ after-nested: 1
+#    ^^ invalid.illegal.nested-comment.soml
+#         ^^ punctuation.definition.comment.end.soml
+#            ^^^^^^^^^^^^ meta.mapping.key.soml
+
+/*
+multi-line: 'not a member'
+# <- comment.block.soml - meta.mapping.key - string
+#^^^^^^^^^^^^^^^^^^^^^^^^^ comment.block.soml - meta.mapping.key - string
+*/
+# <- comment.block.soml punctuation.definition.comment.end.soml
+#^ comment.block.soml punctuation.definition.comment.end.soml
+
+# A line break inside a block comment does not separate items, so the comma after it is on the line of the item.
+comment-before-comma: [1 /*
+*/, 2]
+# <- comment.block.soml punctuation.definition.comment.end.soml
+#^ comment.block.soml punctuation.definition.comment.end.soml
+# ^ punctuation.separator.sequence.soml - invalid
+
+last: 'end'
+# <- meta.mapping.key.soml
+#^^^ meta.mapping.key.soml

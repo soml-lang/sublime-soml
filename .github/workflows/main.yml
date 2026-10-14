@@ -1,0 +1,13 @@
+name: CI
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  syntax-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: SublimeText/syntax-test-action@v2
+        with:
+          build: latest
+          package_name: SOML

@@ -1,0 +1,462 @@
+%YAML 1.2
+---
+# https://github.com/soml-lang/soml/blob/main/spec.md
+# https://www.sublimetext.com/docs/syntax.html
+name: SOML
+scope: source.soml
+version: 2
+
+file_extensions:
+  - soml
+
+variables:
+  # Only space, tab, and LF are whitespace in SOML, so `\s` is never used.
+  space: '[ \t]'
+  non_space: '[^ \t\n]'
+
+  bare_key: '[A-Za-z0-9_-]+'
+  key_begin: (?=[A-Za-z0-9_'"-])
+  literal_string: '''[^''\n]*'''
+  escaped_string: '"(?:[^"\\\n]|\\.)*"'
+  key: (?:{{bare_key}}|{{literal_string}}|{{escaped_string}})
+
+  # A value ends at whitespace, a separator, a closing bracket, or a comment.
+  value_break: (?=[ \t\n,\]}#]|/\*|$)
+  # A run of characters that cannot be part of a token boundary, used to mark a whole bad token at once.
+  illegal_token: '(?:[^ \t\n,{}\[\]#/''"]|/(?!\*))+|{{non_space}}'
+
+  # Numbers
+  decimal_int: (?:0|[1-9](?:_?[0-9])*)
+  digits: '[0-9](?:_?[0-9])*'
+  exponent: (?:e(?:0|-?[1-9](?:_?[0-9])*))
+
+  # Durations
+  duration_number: ({{decimal_int}}(?:(\.){{digits}})?)
+  # A `-` before a duration of zero, such as `-0s`, is an error.
+  zero_duration: '[0._hmsun]+{{value_break}}'
+  # Only the last part may have a fraction.
+  fraction_before_part: '[0-9_.hmsun]*\.[0-9_]+[hmsun]+[0-9]'
+
+  # Instants. The date must exist in the proleptic Gregorian calendar.
+  year: (?!0000)[0-9]{4}
+  leap_year: (?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)
+  month_and_day: |-
+    (?x:
+      (?:0[13578]|1[02])-(?:0[1-9]|[12][0-9]|3[01])
+      | (?:0[469]|11)-(?:0[1-9]|[12][0-9]|30)
+      | 02-(?:0[1-9]|1[0-9]|2[0-8])
+    )
+  date: (?:{{year}}-{{month_and_day}}|{{leap_year}}-02-29)
+  hour: (?:[01][0-9]|2[0-3])
+  minute: '[0-5][0-9]'
+  offset: (?:Z|(?!-00:00)[+-]{{hour}}:{{minute}})
+  instant: '{{date}}T{{hour}}:{{minute}}:{{minute}}(?:\.[0-9]{1,9})?{{offset}}'
+  # Something that begins like an instant, valid or not. It also begins like a key and a colon.
+  instant_shape: '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:'
+  # A line that begins with a key and its colon, after any block comments, which cannot be in an array.
+  key_line: '{{space}}*(?:/\*(?:[^*]|\*(?!/))*\*/{{space}}*)*(?!{{instant_shape}}){{key}}:'
+
+contexts:
+  # The form of a document is decided by its first character after whitespace and comments.
+  main:
+    - match: (?=[{\[])
+      set: [document-end, value]
+    - match: (?={{non_space}})
+      set: brace-less-object
+
+  prototype:
+    - include: comments
+
+  document-end:
+    - include: illegal-tokens
+
+###[ COMMENTS ]################################################################
+
+  comments:
+    - match: '#'
+      scope: punctuation.definition.comment.soml
+      push: line-comment-body
+    - match: /\*
+      scope: punctuation.definition.comment.begin.soml
+      push: block-comment-body
+
+  # The line break is part of the comment, as in the built-in syntaxes, so that completions are not offered at the end of a comment. The contexts that need a line break between members and items therefore also accept the start of a line.
+  line-comment-body:
+    - meta_include_prototype: false
+    - meta_scope: comment.line.number-sign.soml
+    - match: $\n?
+      pop: 1
+    - include: control-characters
+
+  block-comment-body:
+    - meta_include_prototype: false
+    - meta_scope: comment.block.soml
+    - match: \*/
+      scope: punctuation.definition.comment.end.soml
+      pop: 1
+    # The body may not contain `/*`. The `*` of `/*/` begins the closing `*/`.
+    - match: /\*(?!/)
+      scope: invalid.illegal.nested-comment.soml
+    - include: control-characters
+
+###[ OBJECTS ]#################################################################
+
+  # A brace-less object separates its members with line breaks only.
+  brace-less-object:
+    - meta_content_scope: meta.mapping.soml
+    - match: '{{key_begin}}'
+      push: [brace-less-member-end, member-value, member-colon, key-end, key]
+    - include: illegal-tokens
+
+  # The start of a line is matched before comments, so that a comment at the start of the line after a line comment is on a new line.
+  brace-less-member-end:
+    - meta_include_prototype: false
+    # After a line comment, or an array that is not closed, which ends at the start of a line.
+    - match: \n|^
+      pop: 1
+    - include: comments
+    - include: illegal-tokens
+
+  # Sublime Text keeps at most about 256 contexts on its stack. An object in braces takes three, so highlighting stops being correct below about 86 levels of nested objects, and an array takes two, so arrays work to about 120 levels. The spec allows 100, and a config file never comes close.
+  object-body:
+    - meta_scope: meta.mapping.soml
+    - match: \}
+      scope: punctuation.section.mapping.end.soml
+      pop: 1
+    # A wrong closing bracket still closes the object, so the rest of the document is not taken over.
+    - match: \]
+      scope: invalid.illegal.unexpected-token.soml
+      pop: 1
+    - match: '{{key_begin}}'
+      push: [item-end, member-value, member-colon, key-end, key]
+    - include: illegal-tokens
+
+  # Nothing may come between a key and its `:`, not even whitespace or a comment.
+  member-colon:
+    - meta_include_prototype: false
+    - match: ':'
+      scope: punctuation.separator.key-value.soml
+      pop: 1
+    - match: '{{space}}+(?=:)'
+      scope: invalid.illegal.unexpected-token.soml
+    # The colon is missing, so the member has no value.
+    - match: ''
+      pop: 2
+
+  # The value may begin on the next line, after whitespace and comments.
+  member-value:
+    - meta_include_prototype: false
+    - match: \n|^
+      set: member-value-next-line
+    - include: comments
+    - include: member-value-begin
+
+  member-value-next-line:
+    # The value is missing and the next member begins, as when typing a new member.
+    - match: (?!{{instant_shape}})(?={{key}}:)
+      pop: 2
+    - include: member-value-begin
+
+  member-value-begin:
+    - match: (?=[,\]}])
+      pop: 1
+    - match: (?={{non_space}})
+      set: [member-value-meta, value]
+
+  member-value-meta:
+    - clear_scopes: 1
+    - meta_include_prototype: false
+    - meta_scope: meta.mapping.value.soml
+    - match: ''
+      pop: 1
+
+###[ KEYS ]####################################################################
+
+  # A key is never a path, so a `.` after it is an error. The key goes on after it, so that the `:` and the value after it are still highlighted.
+  key-end:
+    - clear_scopes: 1
+    - meta_include_prototype: false
+    - meta_scope: meta.mapping.key.soml
+    - match: \.
+      scope: invalid.illegal.unexpected-token.soml
+      push: key
+    - match: ''
+      pop: 1
+
+  key:
+    - meta_include_prototype: false
+    - match: '{{bare_key}}'
+      scope: meta.string.soml string.unquoted.soml
+      pop: 1
+    - match: "'"
+      scope: punctuation.definition.string.begin.soml
+      set: literal-string-body
+    - match: '"'
+      scope: punctuation.definition.string.begin.soml
+      set: escaped-string-body
+    - match: ''
+      pop: 1
+
+###[ ARRAYS ]##################################################################
+
+  array-body:
+    # The comments are matched after the start of a line, which may begin with a comment before a key.
+    - meta_include_prototype: false
+    - meta_scope: meta.sequence.soml
+    - match: \]
+      scope: punctuation.section.sequence.end.soml
+      pop: 1
+    - match: \}
+      scope: invalid.illegal.unexpected-token.soml
+      pop: 1
+    # A line that begins with a key and its colon, after any block comments, cannot be in an array, so the array was not closed, as when typing. Ending it there keeps the rest of the document from being marked invalid.
+    - match: ^(?={{key_line}})
+      pop: 1
+    - include: comments
+    - match: ','
+      scope: invalid.illegal.unexpected-token.soml
+    - match: (?={{non_space}})
+      push: [item-end, value]
+
+###[ SEPARATORS ]##############################################################
+
+  # Inside brackets, a comma on the line of the item before it, a line break, or both separate members and items.
+  item-end:
+    - meta_include_prototype: false
+    # After a line comment, or an array that is not closed, which ends at the start of a line. Before the comma, so that a comma at the start of the line after a line comment is an error.
+    - match: \n|^
+      set: item-end-next-line
+    - include: comments
+    - match: ','
+      scope: punctuation.separator.sequence.soml
+      pop: 1
+    - match: (?=[\]}])
+      pop: 1
+    - include: illegal-tokens
+
+  # A comma at the start of a line is an error.
+  item-end-next-line:
+    - meta_include_prototype: false
+    - match: ','
+      scope: invalid.illegal.unexpected-token.soml
+      pop: 1
+    # Before the indentation, so an array that is not closed sees the start of the line, also when a key comes after block comments.
+    - match: ^(?={{space}}*[^ \t\n,#/]|{{key_line}})
+      pop: 1
+    - include: comments
+    - match: (?={{non_space}})
+      pop: 1
+
+###[ VALUES ]##################################################################
+
+  value:
+    - meta_include_prototype: false
+    - match: \{
+      scope: punctuation.section.mapping.begin.soml
+      set: object-body
+    - match: \[
+      scope: punctuation.section.sequence.begin.soml
+      set: array-body
+    - include: block-strings
+    - include: strings
+    - include: instants
+    - include: durations
+    - include: numbers
+    - include: keywords
+    - match: '{{illegal_token}}'
+      scope: invalid.illegal.unexpected-token.soml
+      pop: 1
+
+  keywords:
+    - match: true{{value_break}}
+      scope: constant.language.boolean.true.soml
+      pop: 1
+    - match: false{{value_break}}
+      scope: constant.language.boolean.false.soml
+      pop: 1
+    - match: null{{value_break}}
+      scope: constant.language.null.soml
+      pop: 1
+
+  numbers:
+    - match: (-)?(infinity){{value_break}}
+      scope: meta.number.float.other.soml
+      captures:
+        1: keyword.operator.arithmetic.soml
+        2: constant.numeric.value.soml
+      pop: 1
+    - match: (-)?({{decimal_int}}(?:(\.){{digits}}{{exponent}}?|{{exponent}})){{value_break}}
+      scope: meta.number.float.decimal.soml
+      captures:
+        1: keyword.operator.arithmetic.soml
+        2: constant.numeric.value.soml
+        3: punctuation.separator.decimal.soml
+      pop: 1
+    # An alternate radix takes no sign, and its hexadecimal digits are uppercase.
+    - match: (0x)([0-9A-F](?:_?[0-9A-F])*){{value_break}}
+      scope: meta.number.integer.hexadecimal.soml
+      captures:
+        1: constant.numeric.base.soml
+        2: constant.numeric.value.soml
+      pop: 1
+    - match: (0o)([0-7](?:_?[0-7])*){{value_break}}
+      scope: meta.number.integer.octal.soml
+      captures:
+        1: constant.numeric.base.soml
+        2: constant.numeric.value.soml
+      pop: 1
+    - match: (0b)([01](?:_?[01])*){{value_break}}
+      scope: meta.number.integer.binary.soml
+      captures:
+        1: constant.numeric.base.soml
+        2: constant.numeric.value.soml
+      pop: 1
+    # An int has no negative zero.
+    - match: (?!-0{{value_break}})(-)?({{decimal_int}}){{value_break}}
+      scope: meta.number.integer.decimal.soml
+      captures:
+        1: keyword.operator.arithmetic.soml
+        2: constant.numeric.value.soml
+      pop: 1
+
+  # The units are in descending order, each at most once.
+  durations:
+    - match: |-
+        (?x)
+        (?: (-) (?!{{zero_duration}}) )?
+        (?=[0-9]) (?!{{fraction_before_part}})
+        (?: {{duration_number}} (h) )?
+        (?: {{duration_number}} (m) (?!s) )?
+        (?: {{duration_number}} (s) )?
+        (?: {{duration_number}} (ms) )?
+        (?: {{duration_number}} (us) )?
+        (?: {{duration_number}} (ns) )?
+        {{value_break}}
+      scope: meta.number.duration.soml
+      captures:
+        1: keyword.operator.arithmetic.soml
+        2: constant.numeric.value.soml
+        3: punctuation.separator.decimal.soml
+        4: constant.numeric.suffix.soml
+        5: constant.numeric.value.soml
+        6: punctuation.separator.decimal.soml
+        7: constant.numeric.suffix.soml
+        8: constant.numeric.value.soml
+        9: punctuation.separator.decimal.soml
+        10: constant.numeric.suffix.soml
+        11: constant.numeric.value.soml
+        12: punctuation.separator.decimal.soml
+        13: constant.numeric.suffix.soml
+        14: constant.numeric.value.soml
+        15: punctuation.separator.decimal.soml
+        16: constant.numeric.suffix.soml
+        17: constant.numeric.value.soml
+        18: punctuation.separator.decimal.soml
+        19: constant.numeric.suffix.soml
+      pop: 1
+
+  # The lookahead checks the ranges, and the match scopes the parts.
+  instants:
+    - match: |-
+        (?x)
+        (?={{instant}}{{value_break}})
+        [0-9]{4} (-) [0-9]{2} (-) [0-9]{2}
+        (T)
+        [0-9]{2} (:) [0-9]{2} (:) [0-9]{2} (?: (\.) [0-9]+ )?
+        (?: (Z) | ([+-]) [0-9]{2} (:) [0-9]{2} )
+      scope: constant.other.datetime.soml
+      captures:
+        1: punctuation.separator.date.soml
+        2: punctuation.separator.date.soml
+        3: punctuation.separator.datetime.soml
+        4: punctuation.separator.time.soml
+        5: punctuation.separator.time.soml
+        6: punctuation.separator.decimal.soml
+        7: storage.modifier.timezone.soml
+        8: keyword.operator.arithmetic.soml
+        9: punctuation.separator.time.soml
+      pop: 1
+
+###[ STRINGS ]#################################################################
+
+  strings:
+    - match: "'"
+      scope: punctuation.definition.string.begin.soml
+      set: literal-string-body
+    - match: '"'
+      scope: punctuation.definition.string.begin.soml
+      set: escaped-string-body
+
+  literal-string-body:
+    - meta_include_prototype: false
+    - meta_scope: meta.string.soml string.quoted.single.soml
+    - match: "'"
+      scope: punctuation.definition.string.end.soml
+      pop: 1
+    - include: string-end-of-line
+    - include: control-characters
+
+  escaped-string-body:
+    - meta_include_prototype: false
+    - meta_scope: meta.string.soml string.quoted.double.soml
+    - match: '"'
+      scope: punctuation.definition.string.end.soml
+      pop: 1
+    - include: string-end-of-line
+    - include: escapes
+    - include: control-characters
+
+  # A string that is not closed ends at the end of its line, so the next line is not taken over.
+  string-end-of-line:
+    - match: (?=\n)
+      pop: 1
+
+  # The opening delimiter is three or more quotes followed directly by a line break. The closing delimiter is a run of exactly as many quotes at the start of a line, after spaces and tabs, so a longer run is content.
+  block-strings:
+    - match: (\'{3,})(.*)
+      captures:
+        1: punctuation.definition.string.begin.soml
+        2: invalid.illegal.text-after-delimiter.soml
+      set: literal-block-string-body
+    - match: (\"{3,})(.*)
+      captures:
+        1: punctuation.definition.string.begin.soml
+        2: invalid.illegal.text-after-delimiter.soml
+      set: escaped-block-string-body
+
+  literal-block-string-body:
+    - meta_include_prototype: false
+    - meta_scope: meta.string.soml string.quoted.single.block.soml
+    - match: ^{{space}}*(\1)(?!')
+      captures:
+        1: punctuation.definition.string.end.soml
+      pop: 1
+    - include: control-characters
+
+  escaped-block-string-body:
+    - meta_include_prototype: false
+    - meta_scope: meta.string.soml string.quoted.double.block.soml
+    - match: ^{{space}}*(\1)(?!")
+      captures:
+        1: punctuation.definition.string.end.soml
+      pop: 1
+    - include: escapes
+    - include: control-characters
+
+  # `\u{…}` names a Unicode scalar value other than U+000D, in lowercase hexadecimal with no leading zero. A `\` at the end of a line is an error, so there is no line continuation.
+  escapes:
+    - match: \\(?:[\\"nt]|u\{(?!d\}|d[89a-f][0-9a-f]{2}\})(?:0|[1-9a-f][0-9a-f]{0,4}|10[0-9a-f]{4})\})
+      scope: constant.character.escape.soml
+    - match: \\(?:u\{[^}"\\\n]*\}?|.)?
+      scope: invalid.illegal.unrecognized-string-escape.soml
+
+  # A raw control character other than tab and LF is an error everywhere, including in strings and comments.
+  control-characters:
+    - match: '[\x{0}-\x{8}\x{B}-\x{1F}\x{7F}]+'
+      scope: invalid.illegal.control-character.soml
+
+###[ ILLEGAL ]#################################################################
+
+  illegal-tokens:
+    - match: '{{illegal_token}}'
+      scope: invalid.illegal.unexpected-token.soml

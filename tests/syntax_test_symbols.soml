@@ -1,0 +1,21 @@
+# SYNTAX TEST "Packages/SOML/SOML.sublime-syntax"
+
+# The keys of the top-level object are symbols. A quoted key with a dot is one symbol.
+
+  name: 'soml'
+# @@@@ local-definition
+
+  'logging.file': {
+# @@@@@@@@@@@@@@ local-definition
+	path: '/var/log/api.log'
+	rotate: 'daily'
+}
+
+  "quoted key": [
+# @@@@@@@@@@@@ local-definition
+	{name: 'a'}
+]
+
+  pool:
+# @@@@ local-definition
+	{min: 2}

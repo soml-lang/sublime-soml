@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+	<!-- The lines of a block comment are laid out by hand, so reindenting keeps their indentation, and they are left out when computing the indentation of the lines after them, except a line with code before the comment. A bracket in them is text, so it does not indent the line after it. Sublime Text applies these rules to a line only when the comment covers its end, so not to its last line, which is left out in `Indentation Rules`. A `/*` in the body of a block comment is an error, so a line of the body is not taken for a line of code. -->
+	<key>scope</key>
+	<string>source.soml comment.block</string>
+	<key>settings</key>
+	<dict>
+		<key>preserveIndent</key>
+		<true/>
+		<key>increaseIndentPattern</key>
+		<string>(?x)
+			# Only a `{` or `[` that is not closed before a block comment that the line ends in, as in `a: [ /* note`, with a copy of the pattern in `Indentation Rules`, so change both together.
+			^
+			(?: '[^'\n]*' | "(?:[^"\\\n]|\\.)*" | [^'"\#/\n] | /(?!\*) )*
+			[\[{]
+			(?:
+				'[^'\n]*' | "(?:[^"\\\n]|\\.)*" | [^'"\#/\n\[\]{}] | /(?!\*)
+				| \[ (?: '[^'\n]*' | "(?:[^"\\\n]|\\.)*" | [^'"\#/\n\[\]{}] | /(?!\*) | \[ (?: '[^'\n]*' | "(?:[^"\\\n]|\\.)*" | [^'"\#/\n\[\]{}] | /(?!\*) )* \] | \{ (?: '[^'\n]*' | "(?:[^"\\\n]|\\.)*" | [^'"\#/\n\[\]{}] | /(?!\*) )* \} )* \]
+				| \{ (?: '[^'\n]*' | "(?:[^"\\\n]|\\.)*" | [^'"\#/\n\[\]{}] | /(?!\*) | \[ (?: '[^'\n]*' | "(?:[^"\\\n]|\\.)*" | [^'"\#/\n\[\]{}] | /(?!\*) )* \] | \{ (?: '[^'\n]*' | "(?:[^"\\\n]|\\.)*" | [^'"\#/\n\[\]{}] | /(?!\*) )* \} )* \}
+			)*
+			/\* (?: [^*] | \*(?!/) )*
+			$
+		</string>
+		<key>unIndentedLinePattern</key>
+		<string>(?x)
+			# Not a line with code before the block comment that it ends in, as in `a: [ /* note`.
+			^ (?! [ \t]* [^ \t/] .* /\* (?: [^*] | \*(?!/) )* $ )
+		</string>
+	</dict>
+</dict>
+</plist>

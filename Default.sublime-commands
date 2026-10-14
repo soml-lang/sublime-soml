@@ -1,0 +1,57 @@
+[
+	{
+		"caption": "SOML: Format Document",
+		"command": "soml_format"
+	},
+	{
+		"caption": "SOML: Goto Key",
+		"command": "soml_goto_key"
+	},
+	{
+		"caption": "SOML: Copy Key Path",
+		"command": "soml_copy_key_path"
+	},
+	{
+		"caption": "SOML: Toggle Quotes",
+		"command": "soml_toggle_quotes"
+	},
+	{
+		"caption": "SOML: Toggle Block String",
+		"command": "soml_toggle_block_string"
+	},
+	{
+		"caption": "SOML: Toggle One Line",
+		"command": "soml_toggle_one_line"
+	},
+	{
+		"caption": "SOML: Insert Current Instant in UTC",
+		"command": "soml_insert_instant"
+	},
+	{
+		"caption": "SOML: Insert Current Instant in Local Time",
+		"command": "soml_insert_instant",
+		"args": {
+			"local": true
+		}
+	},
+	{
+		"caption": "SOML: Paste JSON as SOML",
+		"command": "soml_paste_json"
+	},
+	{
+		"caption": "SOML: Convert to SOML",
+		"command": "soml_convert_to_soml"
+	},
+	{
+		"caption": "SOML: Trim Trailing Whitespace",
+		"command": "soml_trim_trailing_whitespace"
+	},
+	{
+		"caption": "Preferences: SOML Settings",
+		"command": "edit_settings",
+		"args": {
+			"base_file": "${packages}/SOML/SOML.sublime-settings",
+			"default": "{\n\t$0\n}\n"
+		}
+	}
+]

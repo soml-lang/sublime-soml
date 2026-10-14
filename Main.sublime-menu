@@ -1,0 +1,25 @@
+[
+	{
+		"id": "preferences",
+		"children": [
+			{
+				"id": "package-settings",
+				"children": [
+					{
+						"caption": "SOML",
+						"children": [
+							{
+								"caption": "Settings",
+								"command": "edit_settings",
+								"args": {
+									"base_file": "${packages}/SOML/SOML.sublime-settings",
+									"default": "{\n\t$0\n}\n"
+								}
+							}
+						]
+					}
+				]
+			}
+		]
+	}
+]

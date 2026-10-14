@@ -1,0 +1,27 @@
+{
+	// Indent with tabs, as the SOML formatter does.
+	"translate_tabs_to_spaces": false,
+	"detect_indentation": false,
+
+	// Use LF in new files, because a carriage return is an error in SOML.
+	"default_line_ending": "unix",
+	"ensure_newline_at_eof_on_save": true,
+
+	// The default separators except `-`, so a key like `content-type` is one word.
+	"word_separators": "./\\()\"':,.;<>~!@#$%^&*|+=[]{}`~?",
+
+	// Off, because a trailing space on a line of a block string is part of its value. `soml_trim_trailing_white_space_on_save` trims the other lines.
+	"trim_trailing_white_space_on_save": "none",
+
+	// Remove the spaces and tabs at the end of every line before saving, except in a block string.
+	"soml_trim_trailing_white_space_on_save": true,
+
+	// Format the document before saving it.
+	"soml_format_on_save": false,
+
+	// Show the key path of the caret in the status bar, such as `servers[0].host`.
+	"soml_show_key_path": true,
+
+	// Explain an instant, a duration, or an int in another radix when hovering over it.
+	"soml_show_value_on_hover": true,
+}

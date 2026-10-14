@@ -1,0 +1,273 @@
+#!/usr/bin/env python3
+"""
+Run Sublime Text syntax tests, or dump the scope of every token, from the command line on macOS.
+
+It launches the installed Sublime Text as a second, isolated instance:
+- `CFFIXED_USER_HOME` points Cocoa's Application Support/Caches lookup at a private home directory (plain `HOME` is ignored by Sublime Text on macOS).
+- `--multiinstance` stops the launch from being forwarded to an already running Sublime Text.
+- `sandbox-exec` denies writes to the real Sublime Text data and cache directories as a safety net.
+A small plugin (st_runner_plugin.py) reads a job file on startup, does the work, writes JSON, and quits.
+
+Usage:
+	st-run test PACKAGE_DIR [--name NAME]
+	st-run dump SYNTAX_FILE FILE... [--package DIR] [--name NAME] [--merge] [--output FILE]
+	st-run script PACKAGE_DIR SCRIPT [--name NAME]
+"""
+
+import argparse
+import fcntl
+import json
+import os
+import pwd
+import shutil
+import signal
+import subprocess
+import sys
+import tempfile
+import time
+from pathlib import Path
+
+SCRIPT_DIRECTORY = Path(__file__).resolve().parent
+APP_BINARY = Path(os.environ.get('ST_RUNNER_APP', '/Applications/Sublime Text.app')) / 'Contents/MacOS/sublime_text'
+ISOLATED_HOME = Path(os.environ.get('ST_RUNNER_HOME', Path(tempfile.gettempdir()) / 'st-run-home'))
+DATA_DIRECTORY = ISOLATED_HOME / 'Library/Application Support/Sublime Text'
+PACKAGES_DIRECTORY = DATA_DIRECTORY / 'Packages'
+REAL_HOME = Path(pwd.getpwuid(os.getuid()).pw_dir)
+
+PREFERENCES = {
+	'update_check': False,
+	'hot_exit': 'disabled',
+	'remember_open_files': False,
+	'close_windows_when_empty': False,
+}
+
+
+def prepare(package_directory, package_name):
+	(PACKAGES_DIRECTORY / 'User').mkdir(parents=True, exist_ok=True)
+	(PACKAGES_DIRECTORY / 'StRunner').mkdir(exist_ok=True)
+	(PACKAGES_DIRECTORY / 'User/Preferences.sublime-settings').write_text(json.dumps(PREFERENCES, indent='\t'))
+	shutil.copyfile(SCRIPT_DIRECTORY / 'st_runner_plugin.py', PACKAGES_DIRECTORY / 'StRunner/st_runner.py')
+
+	# Only the package under test is linked in. Remove links from earlier runs.
+	for entry in PACKAGES_DIRECTORY.iterdir():
+		if entry.is_symlink():
+			entry.unlink()
+
+	(PACKAGES_DIRECTORY / package_name).symlink_to(package_directory.resolve(), target_is_directory=True)
+
+
+def guard_profile():
+	paths = [
+		REAL_HOME / 'Library/Application Support/Sublime Text',
+		REAL_HOME / 'Library/Application Support/Sublime Text 3',
+		REAL_HOME / 'Library/Caches/Sublime Text',
+		REAL_HOME / 'Library/Caches/Sublime Text 3',
+	]
+	# The sandbox matches resolved paths, so a folder that is a symbolic link must be resolved to be denied.
+	subpaths = '\n'.join(f'\t(subpath {json.dumps(str(path.resolve()))})' for path in paths)
+	return f'(version 1)\n(allow default)\n(deny file-write*\n{subpaths})\n'
+
+
+def plugin_host_arguments(pid):
+	output = subprocess.run(['ps', '-axo', 'ppid=,args='], capture_output=True, text=True).stdout
+	for line in output.splitlines():
+		parent, _, arguments = line.strip().partition(' ')
+		if parent == str(pid) and 'plugin_host' in arguments:
+			return arguments
+
+	return None
+
+
+def kill_instance(pid):
+	"""Kill only the instance this script started, and its plugin host children."""
+	subprocess.run(['pkill', '-KILL', '-P', str(pid)], capture_output=True)
+	try:
+		os.kill(pid, signal.SIGKILL)
+	except ProcessLookupError:
+		pass
+
+
+def run_job(job, timeout):
+	output_path = Path(tempfile.mkdtemp(prefix='st-run-')) / 'result.json'
+	job['output'] = str(output_path)
+	(DATA_DIRECTORY / 'st-runner-job.json').write_text(json.dumps(job))
+
+	with tempfile.NamedTemporaryFile('w', suffix='.sb', delete=False) as file:
+		file.write(guard_profile())
+		profile_path = file.name
+
+	environment = {**os.environ, 'CFFIXED_USER_HOME': str(ISOLATED_HOME)}
+	# `--background` keeps Sublime Text from taking the focus.
+	process = subprocess.Popen(
+		['sandbox-exec', '-f', profile_path, str(APP_BINARY), '--multiinstance', '--background'],
+		env=environment,
+		stdin=subprocess.DEVNULL,
+		stdout=subprocess.DEVNULL,
+		stderr=subprocess.DEVNULL,
+	)
+
+	deadline = time.monotonic() + timeout
+	checked_plugin_host = False
+	try:
+		while process.poll() is None:
+			if not checked_plugin_host:
+				arguments = plugin_host_arguments(process.pid)
+				if arguments is not None:
+					checked_plugin_host = True
+					if str(DATA_DIRECTORY) not in arguments:
+						kill_instance(process.pid)
+						sys.exit(f'Aborted: Sublime Text did not use the isolated data directory:\n{arguments}')
+
+			if time.monotonic() > deadline:
+				kill_instance(process.pid)
+				sys.exit(f'Timed out after {timeout} seconds')
+
+			# The plugin writes the result in one step, so it is complete once it exists.
+			if output_path.exists():
+				break
+
+			time.sleep(0.1)
+	except KeyboardInterrupt:
+		kill_instance(process.pid)
+		raise
+	finally:
+		os.unlink(profile_path)
+
+	# With `--background`, Sublime Text does not quit when the plugin asks it to, so it is ended here.
+	try:
+		process.wait(timeout=2)
+	except subprocess.TimeoutExpired:
+		kill_instance(process.pid)
+		process.wait()
+
+	if not output_path.exists():
+		sys.exit('Sublime Text exited without writing a result')
+
+	result = json.loads(output_path.read_text())
+	output_path.unlink()
+	output_path.parent.rmdir()
+
+	if 'error' in result:
+		sys.exit('Error inside Sublime Text:\n' + result['error'])
+
+	return result
+
+
+def command_test(arguments):
+	package_directory = Path(arguments.package_directory).resolve()
+	name = arguments.name or package_directory.name
+	prepare(package_directory, name)
+	result = run_job({'kind': 'test', 'package': name}, arguments.timeout)
+
+	total_assertions = 0
+	failure_count = 0
+	resource_prefix = f'Packages/{name}/'
+	for test in result['results']:
+		total_assertions += test['assertions']
+		failure_count += len(test['failures'])
+		for failure in test['failures']:
+			# Make the paths point at the real files.
+			print(failure.replace(resource_prefix, str(package_directory) + '/', 1))
+
+	file_count = len(result['results'])
+	if file_count == 0:
+		print(f'No syntax_test_* files found in {package_directory}')
+		return 1
+
+	if total_assertions == 0:
+		print(f'No assertions ran in {file_count} files. Check the SYNTAX TEST header.')
+		return 1
+
+	if failure_count > 0:
+		print(f'FAILED: {failure_count} of {total_assertions} assertions in {file_count} files failed')
+		return 1
+
+	print(f'Success: {total_assertions} assertions in {file_count} files passed')
+	return 0
+
+
+def merge_tokens(tokens):
+	merged = []
+	for start, end, scope in tokens:
+		if merged and merged[-1][1] == start and merged[-1][2] == scope:
+			merged[-1][1] = end
+		else:
+			merged.append([start, end, scope])
+
+	return merged
+
+
+def command_dump(arguments):
+	syntax_path = Path(arguments.syntax_file).resolve()
+	package_directory = Path(arguments.package).resolve() if arguments.package else syntax_path.parent
+	name = arguments.name or package_directory.name
+	prepare(package_directory, name)
+
+	syntax_resource = f'Packages/{name}/{syntax_path.relative_to(package_directory).as_posix()}'
+	files = [str(Path(file).resolve()) for file in arguments.files]
+	result = run_job({'kind': 'dump', 'syntax': syntax_resource, 'files': files}, arguments.timeout)
+
+	output = {}
+	for original, resolved in zip(arguments.files, files):
+		tokens = [[start, end, scope.rstrip()] for start, end, scope in result['tokens'][resolved]]
+		output[original] = merge_tokens(tokens) if arguments.merge else tokens
+
+	text = json.dumps(output)
+	if arguments.output:
+		Path(arguments.output).write_text(text)
+	else:
+		print(text)
+
+	return 0
+
+
+def command_script(arguments):
+	package_directory = Path(arguments.package_directory).resolve()
+	prepare(package_directory, arguments.name or package_directory.name)
+	result = run_job({'kind': 'script', 'script': str(Path(arguments.script).resolve())}, arguments.timeout)
+
+	for failure in result['failures']:
+		print(failure)
+
+	if result['failures']:
+		print(f'FAILED: {len(result["failures"])} of {result["count"]} checks failed')
+		return 1
+
+	print(f'Success: {result["count"]} checks passed')
+	return 0
+
+
+def main():
+	parser = argparse.ArgumentParser(description='Run Sublime Text syntax tests or dump token scopes using an isolated Sublime Text instance.')
+	parser.add_argument('--timeout', type=float, default=600, help='Seconds before the Sublime Text instance is killed (default: 600)')
+	subparsers = parser.add_subparsers(dest='command', required=True)
+
+	test_parser = subparsers.add_parser('test', help='Run all syntax_test_* files in a package directory')
+	test_parser.add_argument('package_directory')
+	test_parser.add_argument('--name', help='Package name. Must match the Packages/<name>/ path in the SYNTAX TEST header (default: directory name)')
+
+	script_parser = subparsers.add_parser('script', help='Run a Python file inside Sublime Text that reports {count, failures} with finish()')
+	script_parser.add_argument('package_directory')
+	script_parser.add_argument('script')
+	script_parser.add_argument('--name', help='Package name (default: package directory name)')
+
+	dump_parser = subparsers.add_parser('dump', help='Print {file: [[start, end, scope], ...]} as JSON')
+	dump_parser.add_argument('syntax_file', help='Path to the .sublime-syntax file')
+	dump_parser.add_argument('files', nargs='+')
+	dump_parser.add_argument('--package', help='Package directory containing the syntax (default: the directory of the syntax file)')
+	dump_parser.add_argument('--name', help='Package name (default: package directory name)')
+	dump_parser.add_argument('--merge', action='store_true', help='Merge adjacent tokens that have the same scope')
+	dump_parser.add_argument('--output', help='Write JSON to this file instead of stdout')
+
+	arguments = parser.parse_args()
+	command = {'test': command_test, 'dump': command_dump, 'script': command_script}[arguments.command]
+
+	# Runs share the isolated data directory, so one run waits for another to finish instead of replacing its package and job.
+	ISOLATED_HOME.mkdir(parents=True, exist_ok=True)
+	with open(ISOLATED_HOME / 'st-run.lock', 'w') as lock:
+		fcntl.flock(lock, fcntl.LOCK_EX)
+		sys.exit(command(arguments))
+
+
+if __name__ == '__main__':
+	main()
