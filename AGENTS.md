@@ -23,3 +23,7 @@ Run `npm test`. It runs xo, the syntax tests, `scripts/check-plugin.py` (the com
 Sublime Text cannot simulate a key press, so `scripts/check-plugin.py` tests a key binding by evaluating its context with the real scopes and running its command. It replaces `sublime.get_clipboard` in the test instance, so it never reads the real clipboard. Keep it that way.
 
 In a syntax test, carets point at columns of the line above, and a tab counts as one column. An assertion line may not contain a tab after the `#`. `tests/syntax_test_soml.soml` was generated once and is now edited by hand, so count the columns carefully.
+
+## Releasing
+
+The version is in the Install section of the readme. To release, change it in a commit whose message is only the version, such as `0.0.2`, and tag that commit with the same version. Package Control uses the tags.

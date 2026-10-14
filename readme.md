@@ -11,6 +11,8 @@
 
 Install `SOML` with [Package Control](https://packagecontrol.io), or clone this repository into the Sublime Text `Packages` folder as `SOML`. The folder name matters, because the files refer to `Packages/SOML/…`.
 
+*The current version is 0.0.1*
+
 ## Features
 
 - Highlighting, with errors marked as you type, such as `country: no`, `0xff`, `30m1h`, `2026-02-30T00:00:00Z`, `"\q"`, `[1 2]`, and two members on one line
