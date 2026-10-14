@@ -1,0 +1,117 @@
+[
+	{
+		"id": "edit",
+		"children": [
+			{
+				"id": "text",
+				"children": [
+					{
+						"caption": "-",
+						"id": "soml"
+					},
+					{
+						"caption": "Insert Current Instant in UTC",
+						"command": "soml_insert_instant"
+					},
+					{
+						"caption": "Insert Current Instant in Local Time",
+						"command": "soml_insert_instant",
+						"args": {
+							"local": true
+						}
+					},
+					{
+						"caption": "Trim Trailing Whitespace",
+						"command": "soml_trim_trailing_whitespace"
+					}
+				]
+			},
+			{
+				"caption": "-",
+				"id": "soml"
+			},
+			{
+				"caption": "Format Document",
+				"command": "soml_format"
+			},
+			{
+				"caption": "Copy Key Path",
+				"command": "soml_copy_key_path"
+			},
+			{
+				"caption": "Paste JSON as SOML",
+				"command": "soml_paste_json"
+			},
+			{
+				"caption": "Toggle Quotes",
+				"command": "soml_toggle_quotes"
+			},
+			{
+				"caption": "Toggle Block String",
+				"command": "soml_toggle_block_string"
+			},
+			{
+				"caption": "Toggle One Line",
+				"command": "soml_toggle_one_line"
+			}
+		]
+	},
+	{
+		"id": "goto",
+		"children": [
+			{
+				"caption": "-",
+				"id": "soml"
+			},
+			{
+				"caption": "Goto Key…",
+				"command": "soml_goto_key"
+			}
+		]
+	},
+	{
+		"id": "tools",
+		"children": [
+			{
+				"caption": "-",
+				"id": "soml"
+			},
+			{
+				"caption": "Convert to SOML",
+				"command": "soml_convert_to_soml"
+			}
+		]
+	},
+	{
+		"id": "preferences",
+		"children": [
+			{
+				"id": "package-settings",
+				"children": [
+					{
+						"caption": "SOML",
+						"children": [
+							{
+								"caption": "Settings",
+								"command": "edit_settings",
+								"args": {
+									"base_file": "${packages}/SOML/SOML.sublime-settings",
+									"default": "{\n\t$0\n}\n"
+								}
+							},
+							{
+								"caption": "Key Bindings",
+								"command": "edit_settings",
+								"args": {
+									"base_file": "${packages}/SOML/Default.sublime-keymap",
+									"user_file": "${packages}/User/Default ($platform).sublime-keymap",
+									"default": "[\n\t$0\n]\n"
+								}
+							}
+						]
+					}
+				]
+			}
+		]
+	}
+]

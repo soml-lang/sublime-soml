@@ -1,0 +1,40 @@
+# SYNTAX TEST "Packages/SOML/SOML.sublime-syntax"
+
+day: 0001-01-01
+#    ^^^^^^^^^^ constant.other.date.soml - invalid
+day: 0099-01-01
+#    ^^^^^^^^^^ constant.other.date.soml - invalid
+day: 9999-12-31
+#    ^^^^^^^^^^ constant.other.date.soml - invalid
+day: 1582-10-10
+#    ^^^^^^^^^^ constant.other.date.soml - invalid
+day: 2011-12-30
+#    ^^^^^^^^^^ constant.other.date.soml - invalid
+day: 2000-02-29
+#    ^^^^^^^^^^ constant.other.date.soml - invalid
+bad: 0000-01-01
+#    ^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad: 1900-02-29
+#    ^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad: 2026-02-30
+#    ^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad: 2026-1-01
+#    ^^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad: 10000-01-01
+#    ^^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad: 2026-11-01T
+#    ^^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad: 2026-11-01Z
+#    ^^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad: 2026-11-01foo
+#    ^^^^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+bad: 2026-11-01T12:00:00
+#    ^^^^^^^^^^^^^^^^^^^ invalid.illegal.unexpected-token.soml
+2026-11-01: 2000-02-29
+#^^^^^^^^^ meta.mapping.key.soml - constant.other.date.soml
+#           ^^^^^^^^^^ constant.other.date.soml - invalid
+text: '2026-11-01'
+#      ^^^^^^^^^^ string.quoted.single.soml - constant.other.date.soml
+days: [0001-01-01, 9999-12-31]
+#      ^^^^^^^^^^ constant.other.date.soml - invalid
+#                  ^^^^^^^^^^ constant.other.date.soml - invalid

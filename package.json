@@ -1,0 +1,30 @@
+{
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"test": "xo && scripts/st-run test . --name SOML && scripts/st-run script . scripts/check-plugin.py --name SOML && node --test"
+	},
+	"devDependencies": {
+		"soml-lang": "file:../soml-javascript",
+		"xo": "^5.0.1"
+	},
+	"xo": [
+		{
+			"files": [
+				"package.json"
+			],
+			"rules": {
+				"package-json/require-engines": "off"
+			}
+		},
+		{
+			"files": [
+				"test.js"
+			],
+			"rules": {
+				"node-test/no-conditional-assertion": "off",
+				"unicorn/max-nested-calls": "off"
+			}
+		}
+	]
+}

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+	<key>scope</key>
+	<string>source.soml</string>
+	<key>settings</key>
+	<dict>
+		<key>increaseIndentPattern</key>
+		<string>(?x)
+			# A `{` or `[` that is not closed on its line, outside strings and comments. What follows it may hold brackets that it closes, two levels deep, as in `{a: [1, 2],`. `Indentation Rules - Block Comments` has a copy of this pattern, so change both together.
+			^
+			(?: '[^'\n]*' | "(?:[^"\\\n]|\\.)*" | [^'"\#/\n] | /(?!\*) )*
+			[\[{]
+			(?:
+				'[^'\n]*' | "(?:[^"\\\n]|\\.)*" | [^'"\#/\n\[\]{}] | /(?!\*)
+				| \[ (?: '[^'\n]*' | "(?:[^"\\\n]|\\.)*" | [^'"\#/\n\[\]{}] | /(?!\*) | \[ (?: '[^'\n]*' | "(?:[^"\\\n]|\\.)*" | [^'"\#/\n\[\]{}] | /(?!\*) )* \] | \{ (?: '[^'\n]*' | "(?:[^"\\\n]|\\.)*" | [^'"\#/\n\[\]{}] | /(?!\*) )* \} )* \]
+				| \{ (?: '[^'\n]*' | "(?:[^"\\\n]|\\.)*" | [^'"\#/\n\[\]{}] | /(?!\*) | \[ (?: '[^'\n]*' | "(?:[^"\\\n]|\\.)*" | [^'"\#/\n\[\]{}] | /(?!\*) )* \] | \{ (?: '[^'\n]*' | "(?:[^"\\\n]|\\.)*" | [^'"\#/\n\[\]{}] | /(?!\*) )* \} )* \}
+			)*
+			(?: \#.* | /\*.* )?
+			$
+		</string>
+		<key>decreaseIndentPattern</key>
+		<string>(?x)
+			# A line that begins with a closing bracket
+			^ [ \t]* (?: /\*.*?\*/ [ \t]* )* [\]}]
+		</string>
+		<key>bracketIndentNextLinePattern</key>
+		<string>(?x)
+			# A key at the end of its line, whose value is on the next line
+			^ [ \t]*
+			(?: [A-Za-z0-9_-]+ | '[^'\n]*' | "(?:[^"\\\n]|\\.)*" )
+			(?: \. (?: [A-Za-z0-9_-]+ | '[^'\n]*' | "(?:[^"\\\n]|\\.)*" ) )*
+			: [ \t]*
+			(?: \#.* | /\*.* )?
+			$
+		</string>
+		<key>unIndentedLinePattern</key>
+		<string>(?x)
+			# The last line of a block comment, whose indentation is laid out by hand. Sublime Text does not apply `Indentation Rules - Block Comments` to it, because the comment does not cover the end of the line, so it is left out of the indentation of the lines after it here. Only when nothing but comments comes after the comment on its line, so a line with code after the comment counts, and a `*/` in a string is not taken for the end of a comment. A `*/` after a `#` may be in a line comment.
+			^ (?: [^\#/*\n] | /(?!\*) | \*(?!/) )* \*/ (?: [ \t] | /\* (?: [^*] | \*(?!/) )* \*/ )* (?: \#.* )? $
+		</string>
+		<key>indentSquareBrackets</key>
+		<true/>
+	</dict>
+</dict>
+</plist>

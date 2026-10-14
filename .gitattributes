@@ -1,0 +1,13 @@
+* text=auto eol=lf
+
+# Not part of the installed package
+/.github export-ignore
+/scripts export-ignore
+/tests export-ignore
+/.editorconfig export-ignore
+/.gitattributes export-ignore
+/.gitignore export-ignore
+/.npmrc export-ignore
+/package.json export-ignore
+/test.js export-ignore
+/AGENTS.md export-ignore

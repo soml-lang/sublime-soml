@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+	<!-- The keys of the top-level object. -->
+	<key>scope</key>
+	<string>source.soml meta.mapping.key - meta.mapping.value - meta.sequence</string>
+	<key>settings</key>
+	<dict>
+		<key>showInSymbolList</key>
+		<integer>1</integer>
+	</dict>
+</dict>
+</plist>

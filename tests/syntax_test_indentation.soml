@@ -1,0 +1,125 @@
+# SYNTAX TEST reindent-unchanged "Packages/SOML/SOML.sublime-syntax"
+
+name: 'soml'
+pool: {
+	min: 2
+	max: 16
+	nested: {
+		a: [1, 2]
+		b: [
+			3
+			4
+		]
+	}
+}
+ports: [80, 443]
+records: [
+	{name: 'a', email: 'b'}
+	{
+		name: 'c'
+	}
+]
+description:
+	'''
+	A block string keeps its indentation.
+		So this line stays indented.
+	  {
+	And a bracket inside it changes nothing.
+	'''
+after: 1
+value-on-next-line:
+	[
+		1
+	]
+escaped: """
+		indented content
+	"""
+/*
+	A block comment keeps its indentation too.
+*/
+comment-after-bracket: [ # note
+	1
+]
+string-with-bracket: '{'
+open-before-a-closed-bracket: {c: [1, 2],
+	d: {e: {f: 1}},
+	g: [{h: [1]}, 'i]'
+	]
+}
+nested-block-comment: {
+	/* one
+	   two */
+	b: 1
+}
+nested-block-comment-after-a-value: {
+	b: 1 /* one
+   two */
+	c: 1
+}
+/*
+ * A block comment with a star on each line
+ */
+nested-block-comment-with-an-apostrophe: {
+	/* don't
+	   do it, it's */
+	b: 1
+}
+bracket-before-a-block-comment: [ /* c
+	d */
+	1
+]
+brace-before-a-block-comment: { /* c
+	d */
+	b: 1
+}
+block-comment-before-a-line-comment: {
+	b: 1 /* x
+	   y */ # z
+	c: 2
+}
+block-comment-before-another-block-comment: {
+	b: 1 /* x
+	   y */ /* z */
+	c: 2
+}
+block-string-with-a-glob:
+	'''
+	src/*.js
+	x [ /* y
+	'''
+after-the-glob: {
+	b:
+		"""
+		rm src/*.js
+		"""
+	c: 1
+}
+glob: '**/*.js'
+glob-in-an-object: {
+	a: ['**/*.js',
+		'b'
+	]
+}
+nested-block-string: {
+	b:
+		'''
+		x
+		'''
+	c: 1
+}
+formatted-block-string-item: [
+	'''
+	x
+	'''
+	1
+]
+nested-block-string-before-a-closing-bracket: [
+	{
+		b:
+			'''
+			x
+			'''
+	}
+	2
+]
+last: 1

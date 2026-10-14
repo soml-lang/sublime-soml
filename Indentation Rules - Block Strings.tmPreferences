@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+	<!-- The lines of a block string are part of its value, so reindenting keeps their indentation, and they are left out when computing the indentation of the lines after them. A bracket in them is text, so it does not indent the line after it. Sublime Text applies these rules to a line only when the string covers its end, so not to the line of the closing delimiter, which stays in on purpose, because it stands in for the line of the value after its key. -->
+	<key>scope</key>
+	<string>source.soml string.quoted.single.block, source.soml string.quoted.double.block</string>
+	<key>settings</key>
+	<dict>
+		<key>preserveIndent</key>
+		<true/>
+		<key>increaseIndentPattern</key>
+		<string>(?!)</string>
+		<key>unIndentedLinePattern</key>
+		<string>^</string>
+	</dict>
+</dict>
+</plist>
