@@ -11,7 +11,7 @@
 
 Install `SOML` with [Package Control](https://packagecontrol.io), or clone this repository into the Sublime Text `Packages` folder as `SOML`. The folder name matters, because the files refer to `Packages/SOML/…`.
 
-*The current version is 0.0.1*
+*The current version is 0.0.2*
 
 ## Features
 
